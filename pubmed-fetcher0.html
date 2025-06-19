@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PubMed Fetcher</title>
+	<meta name="DC.title" content="PubMed DOI Fetcher">
+	<meta name="DC.identifier" content="huari4@gmail.com">
+	<meta name="dcterms.created" content="2026-06-17">
+	<meta name="dcterms.modified" content="2026-06-19">
+	<style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 900px;
+            width: 100%;
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+        
+        .tab {
+            padding: 10px 25px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 10px 10px 0 0;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: #666;
+        }
+        
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .search-section {
+            margin-bottom: 30px;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        input[type="text"] {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        button {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+        
+        .error {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .success {
+            background: #efe;
+            border: 1px solid #cfc;
+            color: #363;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .urls-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .urls-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .url-display {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            border: 1px solid #e0e0e0;
+            position: relative;
+            padding-right: 80px;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 5px 15px;
+            font-size: 14px;
+            background: #667eea;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .results {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .result-item {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .result-item:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .result-item h4 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .result-item p {
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .result-item .pmid {
+            color: #667eea;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .result-item .pmid:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+        
+        .result-item .doi {
+            color: #764ba2;
+            font-weight: 600;
+        }
+        
+        .result-item .citation {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-size: 0.95em;
+            line-height: 1.6;
+            color: #444;
+            margin-top: 5px;
+            border-left: 3px solid #667eea;
+            position: relative;
+            padding-right: 60px;
+        }
+        
+        .citation-copy-btn {
+            position: absolute;
+            right: 5px;
+            bottom: 10px;
+            padding: 3px 10px;
+            font-size: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .citation-copy-btn:hover {
+            background: #764ba2;
+        }
+        
+        .no-doi {
+            color: #999;
+            font-style: italic;
+        }
+        
+        .stats {
+            text-align: center;
+            color: #666;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+        
+        .batch-results {
+            margin-top: 20px;
+        }
+        
+        .batch-section {
+            margin-bottom: 30px;
+        }
+        
+        .batch-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .formatted-ref {
+            background: #e8f5e9;
+            padding: 15px 15px 10px 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            position: relative;
+            padding-right: 60px;
+            border-left: 3px solid #4caf50;
+        }
+        
+        .failed-ref {
+            background: #fff3e0;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            border-left: 3px solid #ff9800;
+        }
+        
+        .search-links {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .search-links a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .search-links a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+        
+        .search-links button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        .search-links button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .progress {
+            background: #f0f0f0;
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .loading-dots {
+            display: inline-block;
+        }
+        
+        .loading-dots::after {
+            content: '...';
+            animation: pulse 1.5s infinite;
+        }
+        
+        /* New styles for badges and indicators */
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .badge-success {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .badge-warning {
+            background: #ff9800;
+            color: white;
+        }
+        
+        .badge-error {
+            background: #f44336;
+            color: white;
+        }
+        
+        .badge-info {
+            background: #2196f3;
+            color: white;
+        }
+        
+        .search-strategy {
+            display: inline-block;
+            margin-top: 5px;
+            font-size: 0.85em;
+            color: #666;
+        }
+        
+        .search-strategy-label {
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .result-count {
+            font-weight: 600;
+            color: #ff9800;
+        }
+        
+        .search-info {
+            background: #f0f8ff;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            border-left: 3px solid #2196f3;
+        }
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.85em;
+            white-space: nowrap;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PubMed Fetcher</h1>
+		<p class="subtitle">Search PubMed and retrieve DOI values for articles</p>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('single')">Single Search</button>
+            <button class="tab" onclick="switchTab('batch')">Batch Process</button>
+        </div>
+        
+        <div id="single-tab" class="tab-content active">
+            <div class="search-section">
+                <div class="input-group">
+                    <input type="text" 
+                           id="searchTerm" 
+                           placeholder="Enter your PubMed search term (e.g., COVID-19 vaccine efficacy)"
+                           oninput="updateSearchLinks()"
+                           onkeypress="if(event.key === 'Enter') search()">
+                    <button onclick="search()" id="searchBtn">Search</button>
+                    <button onclick="clearSearch()" style="background: #6c757d; box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);">Clear</button>
+                </div>
+                <div class="search-links" style="margin-top: 10px; justify-content: center;">
+                    <a id="pubmedLink" href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank">PubMed search</a>
+                    <a id="scholarLink" href="https://scholar.google.com/" target="_blank">Google Scholar search</a>
+                </div>
+            </div>
+            
+            <div id="urlsDisplay" style="display: none;"></div>
+            <div id="message"></div>
+            <div id="results"></div>
+        </div>
+        
+        <div id="batch-tab" class="tab-content">
+            <div class="batch-section">
+                <p style="margin-bottom: 15px; color: #666;">Paste your references below (one per line):</p>
+                <textarea id="batchInput" placeholder="Example:
+Barton JJ. Higher cortical visual deficits. Continuum (Minneap Minn). 2014;20(4 Neuro-ophthalmology):922-941.
+Chaudhuri Z, Demer JL. Sagging eye syndrome: connective tissue involution as a cause of horizontal and vertical strabismus in older patients. JAMA Ophthalmol. 2013;131(5):619-625."></textarea>
+                <div style="margin-top: 15px;">
+                    <button onclick="processBatch()" id="batchBtn">Process References</button>
+                </div>
+                <p style="margin-top: 10px; font-size: 0.85em; color: #666;">
+                    Note: Only references that return exactly 1 match will be formatted. Check the browser console for search details.
+                </p>
+            </div>
+            
+            <div id="batchProgress" style="display: none;">
+                <div class="progress">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div class="loading" id="progressText">Processing references<span class="loading-dots"></span></div>
+            </div>
+            
+            <div id="batchResults"></div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Updates the href attributes of the search links based on the input field.
+         */
+        function updateSearchLinks() {
+            const searchTerm = document.getElementById('searchTerm').value.trim();
+            const encodedTerm = encodeURIComponent(searchTerm);
+
+            const pubmedLink = document.getElementById('pubmedLink');
+            const scholarLink = document.getElementById('scholarLink');
+
+            if (searchTerm) {
+                // Update links with the current search term
+                pubmedLink.href = `https://pubmed.ncbi.nlm.nih.gov/?term=${encodedTerm}`;
+                scholarLink.href = `https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=${encodedTerm}`;
+            } else {
+                // Reset to default URLs if the search term is empty
+                pubmedLink.href = 'https://pubmed.ncbi.nlm.nih.gov/';
+                scholarLink.href = 'https://scholar.google.com/';
+            }
+        }
+
+        function switchTab(tab) {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+            
+            if (tab === 'single') {
+                tabs[0].classList.add('active');
+                document.getElementById('single-tab').classList.add('active');
+            } else {
+                tabs[1].classList.add('active');
+                document.getElementById('batch-tab').classList.add('active');
+            }
+        }
+        
+        async function search() {
+            const searchTerm = document.getElementById('searchTerm').value.trim();
+            if (!searchTerm) {
+                showMessage('Please enter a search term', 'error');
+                return;
+            }
+            
+            const searchBtn = document.getElementById('searchBtn');
+            const messageDiv = document.getElementById('message');
+            const resultsDiv = document.getElementById('results');
+            const urlsDiv = document.getElementById('urlsDisplay');
+            
+            searchBtn.disabled = true;
+            searchBtn.textContent = 'Searching...';
+            messageDiv.innerHTML = '<div class="loading">Searching PubMed<span class="loading-dots"></span></div>';
+            resultsDiv.innerHTML = '';
+            urlsDiv.style.display = 'none';
+            
+            try {
+                // Step 1: Search for PMIDs
+                const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(searchTerm)}&retmode=json&retmax=20`;
+                
+                const searchResponse = await fetch(searchUrl);
+                const searchData = await searchResponse.json();
+                
+                if (!searchData.esearchresult || !searchData.esearchresult.idlist || searchData.esearchresult.idlist.length === 0) {
+                    showMessage('No results found for your search term', 'error');
+                    searchBtn.disabled = false;
+                    searchBtn.textContent = 'Search';
+                    return;
+                }
+                
+                const pmids = searchData.esearchresult.idlist;
+                const count = searchData.esearchresult.count;
+                
+                // Create search info display
+                const searchInfo = `
+                    <div class="search-info">
+                        <span class="search-strategy-label">Search Term:</span> "${searchTerm}"<br>
+                        <span class="search-strategy-label">Total Results Found:</span> <span class="result-count">${count}</span><br>
+                        <span class="search-strategy-label">Displaying:</span> Top ${pmids.length} results
+                    </div>
+                `;
+                
+                messageDiv.innerHTML = searchInfo + `<div class="loading">Fetching DOIs for top ${pmids.length} articles<span class="loading-dots"></span></div>`;
+                
+                // Step 2: Fetch DOIs using ESummary
+                const pmidList = pmids.join(',');
+                const summaryUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${pmidList}&retmode=json&version=2.0`;
+                
+                // Display the generated URLs
+                urlsDiv.innerHTML = `
+                    <div class="urls-section">
+                        <h3>Generated API URLs:</h3>
+                        <div class="url-display">
+                            <strong>PMID Search URL:</strong><br>${searchUrl}
+                            <button class="copy-btn" onclick="copyToClipboard('${searchUrl}')">Copy</button>
+                        </div>
+                        <div class="url-display">
+                            <strong>DOI Fetch URL:</strong><br>${summaryUrl}
+                            <button class="copy-btn" onclick="copyToClipboard('${summaryUrl}')">Copy</button>
+                        </div>
+                    </div>
+                `;
+                urlsDiv.style.display = 'block';
+                
+                const summaryResponse = await fetch(summaryUrl);
+                const summaryData = await summaryResponse.json();
+                
+                // Process results
+                let resultsHtml = '<div class="results">';
+                let doiCount = 0;
+                
+                for (const pmid of pmids) {
+                    const article = summaryData.result[pmid];
+                    if (!article) continue;
+                    
+                    const formatted = formatArticle(article, pmid);
+                    if (formatted.doi) doiCount++;
+                    
+                    resultsHtml += `
+                        <div class="result-item">
+                            <h4>${formatted.title}</h4>
+                            <p><strong>Authors:</strong> ${formatted.authorsDisplay}</p>
+                            <p><strong>Journal:</strong> ${formatted.journal} (${formatted.year})</p>
+                            <p><strong>PMID:</strong> <a href="https://pubmed.ncbi.nlm.nih.gov/${pmid}" target="_blank" class="pmid">${pmid}</a></p>
+                            <p><strong>DOI:</strong> ${formatted.doi ? `<span class="doi">${formatted.doi}</span>` : '<span class="no-doi">Not available</span>'}</p>
+                            <p><strong>Citation:</strong></p>
+                            <div class="citation">
+                                ${formatted.citation}
+                                <button class="citation-copy-btn" onclick="copyToClipboard('${formatted.citationEscaped}')">Copy</button>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                resultsHtml += '</div>';
+                resultsHtml += `<div class="stats">Found DOIs for ${doiCount} out of ${pmids.length} articles</div>`;
+                
+                resultsDiv.innerHTML = resultsHtml;
+                showMessage(searchInfo + `<div class="success">Successfully retrieved ${pmids.length} articles</div>`, 'raw');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('An error occurred while fetching data. Please check the console for details.', 'error');
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.textContent = 'Search';
+            }
+        }
+        
+        function formatArticle(article, pmid) {
+            const title = article.title || 'No title available';
+            
+            // Format authors for display and citation
+            let authorsDisplay = 'No authors';
+            let authorsCitation = '';
+            if (article.authors && article.authors.length > 0) {
+                authorsDisplay = article.authors.map(a => a.name).slice(0, 3).join(', ') + (article.authors.length > 3 ? ', et al.' : '');
+                
+                const authorsForCitation = article.authors.slice(0, 3).map(a => a.name);
+                authorsCitation = authorsForCitation.join(', ');
+                if (article.authors.length > 3) {
+                    authorsCitation += ', et al';
+                }
+            }
+            
+            const journal = article.source || 'No journal';
+            const year = article.pubdate ? article.pubdate.split(' ')[0] : 'No year';
+            
+            // Parse volume, issue, and pages
+            let volume = article.volume || '';
+            let issue = article.issue || '';
+            let pages = article.pages || '';
+            
+            // Find DOI
+            let doi = null;
+            if (article.articleids) {
+                const doiObj = article.articleids.find(id => id.idtype === 'doi');
+                if (doiObj) {
+                    doi = doiObj.value;
+                }
+            }
+            
+            // Clean title - remove trailing period to avoid double periods
+            let cleanTitle = title.endsWith('.') ? title.slice(0, -1) : title;
+            
+            // Format the citation
+            let citation = `${authorsCitation}. ${cleanTitle}. ${journal}. ${year}`;
+            if (volume) {
+                citation += `;${volume}`;
+                if (issue) {
+                    citation += `(${issue})`;
+                }
+                if (pages) {
+                    citation += `:${pages}`;
+                }
+            }
+            citation += '.';
+            if (doi) {
+                citation += ` doi: ${doi}`;
+            }
+            
+            // Escape citation for onclick handler
+            const citationEscaped = citation.replace(/'/g, "\\'").replace(/"/g, '\\"');
+            
+            return {
+                title,
+                authorsDisplay,
+                authorsCitation,
+                journal,
+                year,
+                volume,
+                issue,
+                pages,
+                doi,
+                citation,
+                citationEscaped
+            };
+        }
+        
+        function formatPageRange(pages) {
+            // Keep full page ranges and convert hyphen to en-dash
+            if (!pages) return pages;
+            
+            // Replace hyphen with en-dash
+            return pages.replace(/-/g, '–');
+        }
+        
+        function formatUniqueCitation(article, pmid) {
+            const formatted = formatArticle(article, pmid);
+            
+            // Format pages in Unique style
+            let pages = formatted.pages;
+            if (pages) {
+                // Replace hyphen with en-dash
+                pages = formatPageRange(pages);
+            }
+            
+            // Build Unique-style citation
+            let citation = `${formatted.authorsCitation}. ${formatted.title.endsWith('.') ? formatted.title.slice(0, -1) : formatted.title}. ${formatted.journal}. ${formatted.year}`;
+            
+            if (formatted.volume) {
+                citation += `;${formatted.volume}`;
+                if (formatted.issue) {
+                    // Clean up issue formatting - preserve the exact format from PubMed
+                    citation += `(${formatted.issue})`;
+                }
+                if (pages) {
+                    citation += `:${pages}`;
+                }
+            }
+            citation += '.';
+            if (formatted.doi) {
+                citation += ` doi: ${formatted.doi}`;
+            }
+            
+            return citation;
+        }
+        
+        async function processBatch() {
+            const batchInput = document.getElementById('batchInput').value.trim();
+            if (!batchInput) {
+                // Replaced alert with custom message
+                showMessage('Please enter references to process', 'error');
+                return;
+            }
+            
+            const batchBtn = document.getElementById('batchBtn');
+            const progressDiv = document.getElementById('batchProgress');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const resultsDiv = document.getElementById('batchResults');
+            
+            batchBtn.disabled = true;
+            progressDiv.style.display = 'block';
+            resultsDiv.innerHTML = '';
+            
+            // Parse references (one per line)
+            const references = batchInput.split('\n').filter(ref => ref.trim());
+            const totalRefs = references.length;
+            
+            const formattedRefs = [];
+            const failedRefs = [];
+            
+            for (let i = 0; i < references.length; i++) {
+                const ref = references[i].trim();
+                progressBar.style.width = `${((i + 1) / totalRefs) * 100}%`;
+                progressText.innerHTML = `Processing reference ${i + 1} of ${totalRefs}<span class="loading-dots"></span>`;
+                
+                // Extract title from reference
+                const searchData = extractSearchTerms(ref);
+                if (!searchData.title) {
+                    failedRefs.push({ 
+                        original: ref, 
+                        reason: 'Could not extract title',
+                        searchData: searchData
+                    });
+                    continue;
+                }
+                
+                try {
+                    // Search by title
+                    const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term="${encodeURIComponent(searchData.title)}"&retmode=json&retmax=20`;
+                    const searchResponse = await fetch(searchUrl);
+                    const searchResult = await searchResponse.json();
+                    
+                    // Log search details
+                    console.log(`Search strategy: ${searchData.strategy}`);
+                    console.log(`Searching for: "${searchData.searchTerm}"`);
+                    if (searchData.author) {
+                        console.log(`Author extracted: "${searchData.author}"`);
+                    };
+                    
+                    // Only consider it a match if exactly 1 result is found
+                    if (!searchResult.esearchresult || !searchResult.esearchresult.idlist || searchResult.esearchresult.idlist.length !== 1) {
+                        const count = searchResult.esearchresult ? searchResult.esearchresult.idlist.length : 0;
+                        console.log(`Found ${count} results for "${searchData.title}"`);
+                        failedRefs.push({ 
+                            original: ref, 
+                            searchData: searchData,
+                            count: count,
+                            reason: count === 0 ? 'No results found' : `Found ${count} results (ambiguous)` 
+                        });
+                        continue;
+                    }
+                    
+                    console.log(`Found exactly 1 result for "${searchData.title}"`);
+                    const pmid = searchResult.esearchresult.idlist[0];
+                    
+                    // Get article details
+                    const summaryUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${pmid}&retmode=json&version=2.0`;
+                    const summaryResponse = await fetch(summaryUrl);
+                    const summaryData = await summaryResponse.json();
+                    
+                    const article = summaryData.result[pmid];
+                    if (article) {
+                        const UniqueCitation = formatUniqueCitation(article, pmid);
+                        formattedRefs.push({
+                            original: ref,
+                            formatted: UniqueCitation,
+                            pmid: pmid,
+                            searchData: searchData
+                        });
+                    } else {
+                        failedRefs.push({ 
+                            original: ref, 
+                            searchData: searchData,
+                            reason: 'Could not retrieve article details'
+                        });
+                    }
+                    
+                } catch (error) {
+                    console.error('Error processing reference:', error);
+                    failedRefs.push({ 
+                        original: ref, 
+                        searchData: searchData,
+                        error: error.message 
+                    });
+                }
+                
+                // Add a small delay to avoid rate limiting
+                await new Promise(resolve => setTimeout(resolve, 350));
+            }
+            
+            // Display results
+            let resultsHtml = '<div class="batch-results">';
+            
+            if (formattedRefs.length > 0) {
+                resultsHtml += '<div class="batch-section">';
+                resultsHtml += `<h3>Successfully Formatted (${formattedRefs.length} references) <span class="badge badge-success">Title Search</span></h3>`;
+                formattedRefs.forEach(ref => {
+                    const escaped = ref.formatted.replace(/'/g, "\\'").replace(/"/g, '\\"');
+                    resultsHtml += `
+                        <div class="formatted-ref">
+                            ${ref.formatted}
+                            <p style="margin: 8px 0 5px 0; font-size: 0.9em;"><strong>PMID:</strong> <a href="https://pubmed.ncbi.nlm.nih.gov/${ref.pmid}" target="_blank" class="pmid">${ref.pmid}</a></p>
+                            <button class="citation-copy-btn" onclick="copyToClipboard('${escaped}')">Copy</button>
+                        </div>
+                    `;
+                });
+                resultsHtml += '</div>';
+            }
+            
+            if (failedRefs.length > 0) {
+                resultsHtml += '<div class="batch-section">';
+                resultsHtml += `<h3>Not Found (${failedRefs.length} references)</h3>`;
+                failedRefs.forEach(ref => {
+                    const searchTerm = ref.searchData.searchTerm;
+                    const pubmedUrl = `https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(searchTerm)}`;
+                    const scholarUrl = `https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=${encodeURIComponent(searchTerm)}`;
+                    
+                    let resultBadge = '';
+                    if (ref.count === 0) {
+                        resultBadge = '<span class="badge badge-error">No Results</span>';
+                    } else if (ref.count > 1) {
+                        resultBadge = `<span class="badge badge-warning">${ref.count} Results</span>`;
+                    }
+                    
+                    resultsHtml += `
+                        <div class="failed-ref">
+                            <div>${ref.original}</div>
+                            ${ref.searchData.title ? `
+                                <div class="search-strategy">
+                                    <span class="search-strategy-label">Searched for:</span> "${ref.searchData.title}"
+                                    <span class="badge badge-info">Title Search</span>
+                                    ${resultBadge}
+                                </div>
+                            ` : ''}
+                            ${ref.reason ? `<div style="font-size: 0.85em; color: #666; margin-top: 5px;">${ref.reason}</div>` : ''}
+                            <div class="search-links">
+                                ${ref.searchData.searchTerm ? `
+                                    <div class="tooltip">
+                                        <button onclick="switchToSingleSearch('${ref.searchData.searchTerm.replace(/'/g, "\\'").replace(/"/g, '\\"')}')"
+                                                title="Search for: ${ref.searchData.searchTerm}">
+                                            Try Single Search
+                                            ${ref.searchData.strategy === 'Author + Title' ? 
+                                                '<span class="badge badge-info" style="margin-left: 5px; font-size: 0.8em;">Author + Title</span>' : 
+                                                ''}
+                                        </button>
+                                        <span class="tooltiptext">${ref.searchData.strategy}: "${ref.searchData.searchTerm}"</span>
+                                    </div>
+                                ` : ''}
+                                <a href="${pubmedUrl}" target="_blank">PubMed search</a>
+                                <a href="${scholarUrl}" target="_blank">Google Scholar search</a>
+                            </div>
+                        </div>
+                    `;
+                });
+                resultsHtml += '</div>';
+            }
+            
+            resultsHtml += `<div class="stats">Successfully formatted ${formattedRefs.length} out of ${totalRefs} references</div>`;
+            
+            // Add summary information
+            const ambiguousCount = failedRefs.filter(ref => ref.reason && ref.reason.includes('ambiguous')).length;
+            const noResultsCount = failedRefs.filter(ref => ref.count === 0).length;
+            const authorTitleCount = failedRefs.filter(ref => ref.searchData.strategy === 'Author + Title').length;
+            
+            if (failedRefs.length > 0) {
+                resultsHtml += `<div class="search-info" style="margin-top: 20px;">
+                    <strong>Search Summary:</strong><br>
+                    <span class="search-strategy-label">Search Strategy:</span> Title-only search<br>
+                    <span class="search-strategy-label">Successful matches:</span> ${formattedRefs.length}<br>
+                    <span class="search-strategy-label">No results found:</span> ${noResultsCount}<br>
+                    <span class="search-strategy-label">Multiple results (ambiguous):</span> ${ambiguousCount}<br>
+                    ${authorTitleCount > 0 ? `<span class="search-strategy-label">Author + Title search available:</span> ${authorTitleCount}<br>` : ''}
+                </div>`;
+            }
+            
+            // Add debugging info
+            if (ambiguousCount > 0 || authorTitleCount > 0) {
+                resultsHtml += `<div style="margin-top: 10px; padding: 10px; background: #f0f8ff; border-radius: 8px; font-size: 0.9em; color: #666;">
+                    <strong>Tips:</strong><br>
+                    • References that return multiple results are marked as ambiguous.<br>
+                    • Use the "Try Single Search" button to review these results manually.<br>
+                    ${authorTitleCount > 0 ? `• ${authorTitleCount} references have "Author + Title" search available for more precise matching.` : ''}
+                </div>`;
+            }
+            
+            resultsHtml += '</div>';
+            
+            resultsDiv.innerHTML = resultsHtml;
+            progressDiv.style.display = 'none';
+            batchBtn.disabled = false;
+        }
+        
+        function extractSearchTerms(reference) {
+            // Extract title and optionally author from reference string
+            const result = {
+                title: null,
+                author: null,
+                searchTerm: null,
+                strategy: 'Title only'
+            };
+            
+            // Try to extract title from reference string
+            // Typical format: Authors. Title. Journal. Year;Volume(Issue):Pages.
+            
+            // First, try to find the title between first and second period after authors
+            const parts = reference.split('.');
+            if (parts.length >= 2) {
+                // Try to extract author's last name from first part
+                const authorsPart = parts[0].trim();
+                if (authorsPart) {
+                    // Extract the first author's last name
+                    // Handle formats like "Smith J", "Smith JA", "Smith, J.A.", etc.
+                    const authorMatch = authorsPart.match(/^([A-Za-z\-\']+)/);
+                    if (authorMatch) {
+                        result.author = authorMatch[1];
+                    }
+                }
+                
+                // Extract title from second part
+                let title = parts[1].trim();
+                
+                // Remove any trailing punctuation
+                title = title.replace(/[.,;:]+$/, '').trim();
+                
+                // Remove any quotes that might be present
+                title = title.replace(/["""'']/g, '');
+                
+                result.title = title;
+                
+                // Set search term based on what we found
+                if (result.author && result.title) {
+                    result.searchTerm = `${result.author} ${result.title}`;
+                    result.strategy = 'Author + Title';
+                } else if (result.title) {
+                    result.searchTerm = result.title;
+                    result.strategy = 'Title only';
+                }
+            }
+            
+            return result;
+        }
+        
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            if (type === 'raw') {
+                messageDiv.innerHTML = text;
+            } else {
+                messageDiv.innerHTML = `<div class="${type}">${text}</div>`;
+            }
+        }
+        
+        function switchToSingleSearch(searchTerm, autoSearch = false) {
+            // Switch to single search tab
+            switchTab('single');
+            
+            // Populate the search field
+            document.getElementById('searchTerm').value = searchTerm;
+
+            // **FIX:** Update the links when switching
+            updateSearchLinks();
+            
+            // Clear any previous results
+            document.getElementById('message').innerHTML = '';
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('urlsDisplay').style.display = 'none';
+            
+            // Show a message about what we're searching for
+            showMessage(`Ready to search for: "${searchTerm}"`, 'raw');
+            
+            // Focus on search field
+            document.getElementById('searchTerm').focus();
+            
+            // Scroll to top of container
+            document.querySelector('.container').scrollIntoView({ behavior: 'smooth' });
+            
+            // Optionally trigger search automatically
+            if (autoSearch && searchTerm) {
+                setTimeout(() => search(), 100); // Small delay to ensure UI updates
+            }
+        }
+        
+        function clearSearch() {
+            document.getElementById('searchTerm').value = '';
+            document.getElementById('message').innerHTML = '';
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('urlsDisplay').style.display = 'none';
+            document.getElementById('searchTerm').focus();
+            updateSearchLinks(); // Reset the links
+        }
+        
+        function copyToClipboard(text) {
+            // Use execCommand as a fallback for iframe environments
+            try {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";  // Avoid scrolling to bottom
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                const message = text.startsWith('http') ? 'URL copied to clipboard!' : 'Citation copied to clipboard!';
+                // Using a temporary message display instead of alert
+                showMessage(`<div class="success">${message}</div>`, 'raw');
+                setTimeout(() => {
+                    const existingMessage = document.querySelector('.search-info');
+                    if (existingMessage) {
+                        showMessage(existingMessage.outerHTML, 'raw');
+                    } else {
+                         showMessage('', 'raw');
+                    }
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+            }
+        }
+        
+        // Example search on load
+        window.onload = () => {
+            document.getElementById('searchTerm').value = 'Microbial keratitis trends following refractive surgery';
+            updateSearchLinks(); // Update links on load
+            
+            // Example batch input
+            document.getElementById('batchInput').value = `Barton JJ. Higher cortical visual deficits. Continuum (Minneap Minn). 2014;20(4 Neuro-ophthalmology):922-941.
+Chaudhuri Z, Demer JL. Sagging eye syndrome: connective tissue involution as a cause of horizontal and vertical strabismus in older patients. JAMA Ophthalmol. 2013;131(5):619-625.
+Jacobson DM. Divergence insufficiency revisited: natural history of idiopathic cases and neurologic associations. Arch Ophthalmol. 2000;118(9):1237-1241.`;
+        };
+    </script>
+</body>
+</html>
